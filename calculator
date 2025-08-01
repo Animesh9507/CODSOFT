@@ -1,0 +1,175 @@
+import tkinter as tk
+import math
+import os
+
+try:
+    import pyperclip
+    CLIPBOARD_AVAILABLE = True
+except ImportError:
+    CLIPBOARD_AVAILABLE = False
+
+history_list = []
+memory_value = 0
+is_dark = True
+HISTORY_FILE = "history.txt"
+
+# Load history from file
+if os.path.exists(HISTORY_FILE):
+    with open(HISTORY_FILE, "r") as file:
+        history_list = file.read().splitlines()
+
+def save_history():
+    with open(HISTORY_FILE, "w") as file:
+        file.write("\n".join(history_list[-50:]))
+
+def apply_theme():
+    bg_color = "#0d0d0d" if is_dark else "#f5f5f5"
+    fg_color = "#39ff14" if is_dark else "#000000"
+    entry.config(bg="#1a1a1a" if is_dark else "#ffffff", fg=fg_color, insertbackground=fg_color)
+    root.config(bg=bg_color)
+    history_box.config(bg="#1a1a1a" if is_dark else "#ffffff", fg=fg_color)
+
+def toggle_theme():
+    global is_dark
+    is_dark = not is_dark
+    apply_theme()
+
+def click(btn_text):
+    global memory_value
+    if btn_text == "C":
+        entry.delete(0, tk.END)
+    elif btn_text == "←":
+        entry.delete(len(entry.get()) - 1, tk.END)
+    elif btn_text == "=":
+        calculate()
+    elif btn_text == "√":
+        try:
+            value = float(entry.get())
+            entry.delete(0, tk.END)
+            entry.insert(tk.END, str(math.sqrt(value)))
+        except:
+            entry.delete(0, tk.END)
+            entry.insert(tk.END, "Error")
+    elif btn_text == "x²":
+        try:
+            value = float(entry.get())
+            entry.delete(0, tk.END)
+            entry.insert(tk.END, str(value ** 2))
+        except:
+            entry.delete(0, tk.END)
+            entry.insert(tk.END, "Error")
+    elif btn_text == "%":
+        try:
+            value = float(entry.get())
+            entry.delete(0, tk.END)
+            entry.insert(tk.END, str(value / 100))
+        except:
+            entry.delete(0, tk.END)
+            entry.insert(tk.END, "Error")
+    elif btn_text == "1/x":
+        try:
+            value = float(entry.get())
+            entry.delete(0, tk.END)
+            entry.insert(tk.END, str(1 / value))
+        except:
+            entry.delete(0, tk.END)
+            entry.insert(tk.END, "Error")
+    elif btn_text == "π":
+        entry.insert(tk.END, str(math.pi))
+    elif btn_text == "e":
+        entry.insert(tk.END, str(math.e))
+    elif btn_text == "MC":
+        memory_value = 0
+    elif btn_text == "M+":
+        try:
+            memory_value += float(entry.get())
+        except:
+            memory_value = 0
+    elif btn_text == "M-":
+        try:
+            memory_value -= float(entry.get())
+        except:
+            memory_value = 0
+    elif btn_text == "MR":
+        entry.delete(0, tk.END)
+        entry.insert(tk.END, str(memory_value))
+    else:
+        entry.insert(tk.END, btn_text)
+
+def calculate(event=None):
+    try:
+        expression = entry.get()
+        result = eval(expression)
+        entry.delete(0, tk.END)
+        entry.insert(tk.END, str(result))
+        history_list.append(f"{expression} = {result}")
+        update_history()
+        save_history()
+    except:
+        entry.delete(0, tk.END)
+        entry.insert(tk.END, "Error")
+
+def update_history():
+    history_box.delete(0, tk.END)
+    for item in history_list[-20:]:
+        history_box.insert(tk.END, item)
+
+def copy_result():
+    if CLIPBOARD_AVAILABLE:
+        pyperclip.copy(entry.get())
+    else:
+        entry.delete(0, tk.END)
+        entry.insert(tk.END, "Clipboard not available")
+
+# Main window
+root = tk.Tk()
+root.title("Final Premium Calculator")
+root.geometry("500x750")
+root.minsize(400, 650)
+
+entry = tk.Entry(root, font=("Arial", 28), bd=5, relief="ridge", justify="right")
+entry.pack(fill="x", padx=10, pady=15)
+entry.bind("<Return>", calculate)
+
+buttons = [
+    ["7", "8", "9", "/"],
+    ["4", "5", "6", "*"],
+    ["1", "2", "3", "-"],
+    ["0", ".", "=", "+"],
+    ["C", "←", "√", "x²"],
+    ["%", "1/x", "π", "e"],
+    ["MC", "M+", "M-", "MR"]
+]
+
+frame = tk.Frame(root)
+frame.pack(expand=True, fill="both")
+
+for row in buttons:
+    row_frame = tk.Frame(frame)
+    row_frame.pack(expand=True, fill="both")
+    for btn in row:
+        tk.Button(row_frame, text=btn, font=("Arial", 16, "bold"),
+                  bg="#4a148c", fg="white", activebackground="#7b1fa2",
+                  width=5, height=2, command=lambda b=btn: click(b)).pack(
+                      side="left", padx=5, pady=5, expand=True, fill="both")
+
+tk.Label(root, text="History", font=("Arial", 14, "bold")).pack(pady=5)
+history_frame = tk.Frame(root)
+history_frame.pack(pady=5, fill="both", expand=True)
+
+scrollbar = tk.Scrollbar(history_frame)
+scrollbar.pack(side="right", fill="y")
+
+history_box = tk.Listbox(history_frame, height=8, font=("Arial", 12),
+                         yscrollcommand=scrollbar.set)
+history_box.pack(side="left", fill="both", expand=True)
+scrollbar.config(command=history_box.yview)
+
+tk.Button(root, text="Toggle Theme", font=("Arial", 14, "bold"),
+          bg="#009688", fg="white", command=toggle_theme).pack(pady=5)
+tk.Button(root, text="Copy Result", font=("Arial", 14, "bold"),
+          bg="#ff6f00", fg="white", command=copy_result).pack(pady=5)
+
+apply_theme()
+update_history()
+root.mainloop()
