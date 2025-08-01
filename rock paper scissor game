@@ -1,0 +1,110 @@
+import tkinter as tk
+import random
+from tkinter import messagebox
+
+# Window setup
+root = tk.Tk()
+root.title("Rock Paper Scissors - Ultimate Edition")
+root.geometry("500x500")
+root.config(bg="#121212")
+
+# Variables
+user_score = 0
+computer_score = 0
+round_history = []
+total_rounds = 5  # default best of 5
+rounds_played = 0
+
+# Functions
+def set_rounds(value):
+    global total_rounds
+    total_rounds = int(value)
+    reset_game()
+    messagebox.showinfo("Rounds Set", f"Best of {total_rounds} rounds selected!")
+
+def play(choice):
+    global user_score, computer_score, rounds_played
+    
+    options = ["Rock", "Paper", "Scissors"]
+    emojis = {"Rock": "✊", "Paper": "✋", "Scissors": "✌"}
+    computer_choice = random.choice(options)
+    rounds_played += 1
+    
+    if choice == computer_choice:
+        result = "It's a Tie!"
+    elif (choice == "Rock" and computer_choice == "Scissors") or \
+         (choice == "Paper" and computer_choice == "Rock") or \
+         (choice == "Scissors" and computer_choice == "Paper"):
+        result = "You Win! 🎉"
+        user_score += 1
+    else:
+        result = "Computer Wins! 😢"
+        computer_score += 1
+
+    round_history.append(f"Round {rounds_played}: {choice} vs {computer_choice} -> {result}")
+    update_history()
+    
+    label_result.config(text=f"{result}\nYou: {choice} {emojis[choice]} | Computer: {computer_choice} {emojis[computer_choice]}")
+    label_score.config(text=f"Score - You: {user_score} | Computer: {computer_score} ({rounds_played}/{total_rounds})")
+
+    if rounds_played >= total_rounds:
+        end_game()
+
+def update_history():
+    history_box.delete(0, tk.END)
+    for round_info in round_history[-5:]:
+        history_box.insert(tk.END, round_info)
+
+def end_game():
+    if user_score > computer_score:
+        winner = "Congratulations! You won the game! 🏆"
+    elif computer_score > user_score:
+        winner = "Oh no! Computer won the game. 😔"
+    else:
+        winner = "It's a tie game! 🤝"
+    messagebox.showinfo("Game Over", winner)
+    reset_game()
+
+def reset_game():
+    global user_score, computer_score, round_history, rounds_played
+    user_score = 0
+    computer_score = 0
+    rounds_played = 0
+    round_history = []
+    label_result.config(text="")
+    label_score.config(text=f"Score - You: 0 | Computer: 0 (0/{total_rounds})")
+    history_box.delete(0, tk.END)
+
+# UI Elements
+tk.Label(root, text="Rock Paper Scissors - Ultimate Edition", font=("Arial", 18, "bold"), bg="#121212", fg="#FFD369").pack(pady=10)
+
+label_result = tk.Label(root, text="", font=("Arial", 14), bg="#121212", fg="#FFFFFF")
+label_result.pack(pady=15)
+
+label_score = tk.Label(root, text=f"Score - You: 0 | Computer: 0 (0/{total_rounds})", font=("Arial", 12), bg="#121212", fg="#FFD369")
+label_score.pack(pady=5)
+
+# Rounds Selector
+frame_rounds = tk.Frame(root, bg="#121212")
+frame_rounds.pack(pady=10)
+tk.Label(frame_rounds, text="Best of: ", bg="#121212", fg="#FFD369").grid(row=0, column=0)
+rounds_menu = tk.StringVar(value="5")
+tk.OptionMenu(frame_rounds, rounds_menu, "3", "5", "7", "10", command=set_rounds).grid(row=0, column=1)
+
+# Buttons
+frame_buttons = tk.Frame(root, bg="#121212")
+frame_buttons.pack(pady=20)
+
+tk.Button(frame_buttons, text="Rock ✊", width=12, height=2, bg="#00ADB5", fg="white", command=lambda: play("Rock")).grid(row=0, column=0, padx=10)
+tk.Button(frame_buttons, text="Paper ✋", width=12, height=2, bg="#00ADB5", fg="white", command=lambda: play("Paper")).grid(row=0, column=1, padx=10)
+tk.Button(frame_buttons, text="Scissors ✌", width=12, height=2, bg="#00ADB5", fg="white", command=lambda: play("Scissors")).grid(row=0, column=2, padx=10)
+
+# History
+tk.Label(root, text="Match History:", font=("Arial", 14, "bold"), bg="#121212", fg="#FFD369").pack(pady=10)
+history_box = tk.Listbox(root, width=60, height=5, bg="#1F1F1F", fg="white", font=("Arial", 10))
+history_box.pack(pady=5)
+
+# Reset button
+tk.Button(root, text="Reset Game", width=15, height=2, bg="#FF5722", fg="white", command=reset_game).pack(pady=10)
+
+root.mainloop()
